@@ -1,0 +1,253 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 80,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#调用numpy拓展包\n",
+    "import numpy\n",
+    "\n",
+    "#调用scipy.special\n",
+    "import scipy.special\n",
+    "\n",
+    "#调用绘图包\n",
+    "import matplotlib.pyplot\n",
+    "%matplotlib inline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 81,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 神经网络类\n",
+    "\n",
+    "class neuralnetwork:\n",
+    "    \n",
+    "    # 神经网络类初始化\n",
+    "    def __init__(self,innode,hidenode,outnode,learningrate): \n",
+    "        \n",
+    "        # 输入层节点  隐藏节点 输出层节点 学习率 \n",
+    "        self.innodes=innode\n",
+    "        self.hidenodes=hidenode\n",
+    "        self.outnodes=outnode\n",
+    "        self.study=learningrate\n",
+    "        \n",
+    "        #构建初始权重矩阵\n",
+    "            #numpy. random. rand( rows , columns ) 生成随机矩阵 且矩阵的值为0-1\n",
+    "            #-0.5 权重出现正负 整体权重在-0.5和0.5之间波动\n",
+    "        #self.in_hid=(numpy.random.rand(self.hidenodes, self.innodes)-0.5)\n",
+    "        #self.hid_out=(numpy.random.rand(self.outnodes, self.hidenodes)-0.5)\n",
+    "        \n",
+    "        #进行优化之后的初始权重矩阵\n",
+    "            #numpy.random.normal() 以正态分布的方式采样\n",
+    "        self.in_hid=numpy.random.normal(0.0,pow(self.hidenodes,-0.5),(self.hidenodes, self.innodes))\n",
+    "        self.hid_out=numpy.random.normal(0.0,pow(self.outnodes,-0.5),(self.outnodes, self.hidenodes))\n",
+    "        \n",
+    "        #激活函数\n",
+    "        self.activation_function = lambda x: scipy.special.expit(x)\n",
+    "        \n",
+    "        pass\n",
+    "\n",
+    "    # 模型训练\n",
+    "    def train(self,input_list,target_list):\n",
+    "        \n",
+    "        #数据传输\n",
+    "        inputs=numpy.array(input_list,ndmin=2).T\n",
+    "        targets=numpy.array(target_list,ndmin=2).T\n",
+    "        \n",
+    "        #计算隐藏层输入信号\n",
+    "        hide_in= numpy.dot(self.in_hid,inputs)\n",
+    "        \n",
+    "        #计算隐藏层输出信号\n",
+    "        hide_out=self.activation_function(hide_in)\n",
+    "        \n",
+    "        #计算最后的输入信号\n",
+    "        final_in=numpy.dot(self.hid_out, hide_out)\n",
+    "        \n",
+    "        #计算最后的输出信号\n",
+    "        final_out=self.activation_function(final_in)\n",
+    "        \n",
+    "        #输出层误差值计算\n",
+    "        out_error=targets-final_out\n",
+    "        \n",
+    "        #隐藏层误差值计算\n",
+    "        hide_error=numpy.dot(self.hid_out.T, out_error)\n",
+    "        \n",
+    "        #更新权重1\n",
+    "        self.hid_out+=self.study* numpy.dot((out_error*final_out*(1.0-final_out)),numpy.transpose(hide_out))\n",
+    "        \n",
+    "        #更新权重2\n",
+    "        self.in_hid+=self.study*numpy.dot((hide_error*hide_out*(1.0-hide_out)),numpy.transpose(inputs))\n",
+    "        \n",
+    "        pass\n",
+    "\n",
+    "    # 问答\n",
+    "    def query(self,input_list): \n",
+    "        \n",
+    "        #传递输入数据列表\n",
+    "        inputs=numpy.array(input_list,ndmin=2).T\n",
+    "        \n",
+    "        #计算隐藏层的输入信号\n",
+    "        hide_in=numpy.dot(self.in_hid,inputs)\n",
+    "        \n",
+    "        #计算隐藏层输出信号\n",
+    "        hide_out=self.activation_function(hide_in)\n",
+    "        \n",
+    "        #计算最终的输入信号\n",
+    "        final_in= numpy.dot(self.hid_out, hide_out)\n",
+    "        \n",
+    "        #计算最终的输出信号\n",
+    "        final_out=self.activation_function(final_in)\n",
+    "        \n",
+    "        return final_out"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 82,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 赋值构建神经网络对象\n",
+    "\n",
+    "tmp_in=784\n",
+    "tmp_hide=200\n",
+    "tmp_out=10\n",
+    "tmp_lr=0.1\n",
+    "\n",
+    "tmp=neuralnetwork(tmp_in,tmp_hide,tmp_out,tmp_lr)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 83,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#加载训练文件\n",
+    "\n",
+    "training_file=open(\"/Users/dinghao/Documents/手写数字识别/mnist_train.csv\", 'r')\n",
+    "training_list=training_file.readlines()\n",
+    "training_file.close()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 神经网络训练代码\n",
+    "\n",
+    "for i in range(5):\n",
+    "    \n",
+    "    #遍历所有训练样本\n",
+    "    for record in training_list:\n",
+    "        \n",
+    "        all_values=record.split(',')\n",
+    "        inputs=(numpy.asfarray(all_values[1:])/255.0*0.99)+0.01\n",
+    "        targets=numpy.zeros(tmp_out)+0.01\n",
+    "        targets[int(all_values[0])]=0.99\n",
+    "        tmp.train(inputs,targets)\n",
+    "        pass\n",
+    "    \n",
+    "    pass"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 85,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#加载神经网络测试数据\n",
+    "\n",
+    "test_file=open(\"/Users/dinghao/Documents/手写数字识别/mnist_test.csv\", 'r')\n",
+    "test_list=test_file.readlines()\n",
+    "test_file.close()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 86,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#神经网络测试\n",
+    "\n",
+    "scorecard = []\n",
+    "\n",
+    "for record in test_list:\n",
+    "    \n",
+    "    all_values=record.split(',')\n",
+    "    \n",
+    "    #第一个数据为正确答案\n",
+    "    ans=int(all_values[0])\n",
+    "    \n",
+    "    inputs=(numpy.asfarray(all_values[1:])/255.0*0.99)+0.01\n",
+    "    outputs=tmp.query(inputs)\n",
+    "    label=numpy.argmax(outputs)\n",
+    "    \n",
+    "    #结果检验\n",
+    "    if (label==ans):\n",
+    "        scorecard.append(1)\n",
+    "    else:\n",
+    "        scorecard.append(0)\n",
+    "        pass\n",
+    "    pass"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 87,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "performance =  0.9739\n"
+     ]
+    }
+   ],
+   "source": [
+    "#计算神经网络的正确率并输出相应的结果\n",
+    "\n",
+    "scorecard_array=numpy.asarray(scorecard)\n",
+    "print (\"performance = \",scorecard_array.sum()/scorecard_array.size)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
